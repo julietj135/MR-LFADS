@@ -234,7 +234,7 @@ class BasicDataModule(pl.LightningDataModule):
                 ds,
                 batch_size=self.hparams.batch_size,
                 shuffle=shuffle,
-                num_workers=8,
+                num_workers=16,
                 drop_last=False,
             )
             for i, ds in enumerate(self.train_session_datasets)
@@ -247,7 +247,7 @@ class BasicDataModule(pl.LightningDataModule):
                 ds,
                 batch_size=len(ds),
                 shuffle=False,
-                num_workers=8,
+                num_workers=16,
             )
             for i, ds in enumerate(self.val_session_datasets)
         }
