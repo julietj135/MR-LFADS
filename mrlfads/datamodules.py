@@ -247,6 +247,7 @@ class BasicDataModule(pl.LightningDataModule):
                 ds,
                 batch_size=len(ds),
                 shuffle=False,
+                num_workers=8,
             )
             for i, ds in enumerate(self.val_session_datasets)
         }
