@@ -1,8 +1,13 @@
 import os
 import shutil
+import sys
 
 from pathlib import Path
 from datetime import datetime
+
+mrlfads_dir = "/root/MR-LFADS"
+folder_path = os.path.abspath(mrlfads_dir)
+sys.path.append(folder_path)
 
 import config.paths as path
 from mrlfads.run import run
