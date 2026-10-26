@@ -18,5 +18,6 @@ on_init_end_calls:
       log_every_n_epochs: 40
     - _target_: mrlfads.callbacks.CommunicationPSTHPlot
       log_every_n_epochs: 40
+      var_name: batch
     - _target_: mrlfads.callbacks.AnatomyPlot
       log_every_n_epochs: 40
