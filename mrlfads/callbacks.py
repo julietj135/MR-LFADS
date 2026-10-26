@@ -521,7 +521,7 @@ class PSTHPlot:
                     if area.output_dist.name == "poisson":
                         infer_data = torch.exp(outputs[area_name][s].detach().cpu()).numpy()
                     else:
-                        infer_data = outputs[area_name][s].outputs.detach().cpu().numpy()
+                        infer_data = outputs[area_name][s].detach().cpu().numpy()
 
                     if area.output_dist.name == "zipoisson":
                         non_zero_prob = 1 - area.output_dist.zero_prob.detach().cpu().numpy()

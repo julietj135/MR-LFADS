@@ -4,7 +4,7 @@ _target_: mrlfads.model.MRLFADS
 # Dataset parameters
 num_other_areas: 3
 seq_len: 66
-ic_enc_seq_len: 5
+ic_enc_seq_len: 5 # changed for decoder, used to be 10
 
 # Validation: Holdout Neurons
 hn_indices:
