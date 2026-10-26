@@ -10,6 +10,6 @@ area_names:
     - SSp-tr
     - VISp
 
-batch_size: 64 # changed from 16
+batch_size: 16 # changed from 16
 train_val_split_seed: 42
 ignore_info: true
