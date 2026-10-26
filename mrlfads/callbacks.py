@@ -508,6 +508,7 @@ class PSTHPlot:
                 sharex=True,
                 sharey="row",
                 figsize=(3 * n_cols, 2 * n_rows),
+                squeeze=False,
             )
 
             # For each condition (category):
@@ -545,7 +546,7 @@ class PSTHPlot:
                         ax_col[count].fill_between(range(len(x_mean)), x_mean - x_std, x_mean + x_std,
                                                    color="gray", alpha=0.5)
                         ax_col[count].set_ylabel(f"{area_name}, neuron #{jn}")
-                        ax_col[count].set_title(categories[ic].replace("_", ", "))
+                        ax_col[count].set_title(str(categories[ic]).replace("_", ", "))
                         count += 1
 
             plt.tight_layout()
