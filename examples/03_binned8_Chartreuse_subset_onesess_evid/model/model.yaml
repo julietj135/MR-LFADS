@@ -52,7 +52,7 @@ areas_params:
     MOp:
         # Data
         num_neurons:
-          n0: 178
+          n0: 57
         ext_input_dim: 0
     
         # Architecture
@@ -112,7 +112,7 @@ areas_params:
     RSP:
         # Data
         num_neurons:
-          n0: 155
+          n0: 50
         ext_input_dim: 0
     
         # Architecture
@@ -172,7 +172,7 @@ areas_params:
     SSp-tr:
         # Data
         num_neurons:
-          n0: 193
+          n0: 60
         ext_input_dim: 0
     
         # Architecture
@@ -232,7 +232,7 @@ areas_params:
     VISp:
         # Data
         num_neurons:
-          n0: 145
+          n0: 43
         ext_input_dim: 0
     
         # Architecture
