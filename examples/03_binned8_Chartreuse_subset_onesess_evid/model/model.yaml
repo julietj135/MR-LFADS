@@ -3,7 +3,7 @@ _target_: mrlfads.model.MRLFADS
 # ----- DATA ----- #
 # Dataset parameters
 num_other_areas: 3
-seq_len: 66
+seq_len: 47
 ic_enc_seq_len: 5
 
 # Validation: Holdout Neurons
