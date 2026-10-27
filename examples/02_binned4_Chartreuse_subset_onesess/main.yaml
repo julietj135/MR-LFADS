@@ -21,7 +21,7 @@ callbacks:
     save_top_k: -1
     save_last: True
     verbose: False
-    every_n_epochs: 30
+    every_n_epochs: 20
     dirpath: lightning_checkpoints
     auto_insert_metric_name: False
   learning_rate_monitor:

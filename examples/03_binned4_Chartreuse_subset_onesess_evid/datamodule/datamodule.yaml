@@ -1,0 +1,15 @@
+_target_: mrlfads.datamodules.BasicDataModule
+
+filename: binned_4_Chartreuse/subset_onesess
+session_idxs:
+    - 0
+    
+area_names:
+    - MOp
+    - RSP
+    - SSp-tr
+    - VISp
+
+batch_size: 16 # changed from 16
+train_val_split_seed: 42
+ignore_info: true
