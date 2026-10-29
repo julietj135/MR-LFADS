@@ -154,6 +154,7 @@ def run(
             ckpt_path = matches[0]
 
     # TRAIN FLOW ONLY
+    ckpt = None
     if train:
         trainer = instantiate(
             config.trainer,
@@ -185,7 +186,7 @@ def run(
     if model_transforms is not None:
         for (transform, kwargs) in model_transforms:
             model = transform(model, **kwargs)
-    return model, datamodule, None
+    return model, datamodule, ckpt
 
 def load(
     config_path: str,
