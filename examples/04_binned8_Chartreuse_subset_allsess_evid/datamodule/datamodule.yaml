@@ -1,6 +1,6 @@
 _target_: mrlfads.datamodules.BasicDataModule
 
-filename: binned_8_Chartreuse/subset_onesess_evid
+filename: binned_8_Chartreuse/subset_allsess_evid
 session_idxs:
     - 0
     
