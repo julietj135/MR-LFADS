@@ -57,12 +57,12 @@ areas_params:
     
         # Architecture
         data_dim: 64
-        ic_enc_dim: 64 
-        ci_enc_dim: 64 
+        ic_enc_dim: 32 
+        ci_enc_dim: 32 
         ci_lag: 0
-        con_dim: 128 
+        con_dim: 64 
         co_dim: 6
-        ic_dim: 64 
+        ic_dim: 32 
         gen_dim: ${eval:${model.areas_params.MOp.num_neurons.n0} * 2}
         fac_dim: ${model.areas_params.MOp.data_dim}
         com_dim: 10
