@@ -13,6 +13,6 @@ on_init_end_calls:
     - _target_: mrlfads.callbacks.InferredPredsPlot
       log_every_n_epochs: 50
       smooth: false
-      n_samples: 8
+      n_samples: 5
     - _target_: mrlfads.callbacks.ProctorSummaryPlot
       log_every_n_epochs: 50
