@@ -1,91 +1,181 @@
 import os
-import ray
-import hydra
-import shutil
-import pytorch_lightning as pl
 import sys
-
+import shutil
+import math
 from pathlib import Path
 from datetime import datetime
+
+import ray
+import pytorch_lightning as pl
 from ray import train, tune, air
-from ray.tune import CLIReporter
-from hydra.core.hydra_config import HydraConfig
 from hydra import compose, initialize_config_dir
 from omegaconf import OmegaConf, open_dict
 
-mrlfads_dir = "/root/MR-LFADS"
-folder_path = os.path.abspath(mrlfads_dir)
-sys.path.append(folder_path)
+
+# ---------- PROJECT IMPORTS ----------
+MRLFADS_DIR = "/root/MR-LFADS"
+
+if MRLFADS_DIR not in sys.path:
+    sys.path.insert(0, MRLFADS_DIR)
 
 import config.paths as path
 from mrlfads.run import run
 
-# ---------- USER DEFINED PARAMETERS -----------
-PROJECT_STR = os.path.basename(os.getcwd())
-EXIST_PROJECT_STR = None
+
+# ---------- USER SETTINGS ----------
+SCRIPT_PATH = Path(__file__).resolve()
+CUR_DIR = SCRIPT_PATH.parent
+CONFIG_PATH = CUR_DIR / "main.yaml"
+
+AREAS = ["MOp", "RSP", "SSp-tr", "VISp"]
+
+# Example grid: refine around the best value afterward.
+KL_U_VALUES = [0.001, 0.01, 0.1, 1.0, 10.0]
+
 HYPERPARAM_SPACE = {
-    "seed": tune.grid_search([0, 1, 2]),
+    "area": tune.grid_search(AREAS),
+    "kl_u": tune.grid_search(KL_U_VALUES),
+    "seed": 0,
 }
-OVERWRITE = True
-RESOURCES_PER_TRIAL = {'cpu': 16, 'gpu': 0.2}
-# ----------------------------------------------
 
-# Name RUN directory
-RUN_STR = PROJECT_STR + '_id' + datetime.now().strftime("%y%m%d%H%M") if not EXIST_PROJECT_STR else EXIST_PROJECT_STR
-RUN_DIR = Path(os.path.join(path.resultpath)) / RUN_STR
-CUR_DIR = Path(__file__).resolve().parent
+RESOURCES_PER_TRIAL = {"cpu": 4, "gpu": 0.2}
+MAX_CONCURRENT_TRIALS = 4
+# -----------------------------------
 
-# Overwrite the directory and re-create new one
-if OVERWRITE:
-    if RUN_DIR.exists(): shutil.rmtree(RUN_DIR)
-    RUN_DIR.mkdir(parents=True)
-else:
-    print('WARNING: RUN_DIR NOT OVERWRITTEN.')
 
-# Copy this script
-shutil.copyfile(__file__, RUN_DIR / Path(__file__).name)
+def trainable(trial_config, config_path):
+    # Ensure project imports are available inside the Ray worker.
+    if MRLFADS_DIR not in sys.path:
+        sys.path.insert(0, MRLFADS_DIR)
 
-# Load initial configuration
-os.chdir(RUN_DIR)
-config_path = os.path.join(CUR_DIR, 'main.yaml')
-config_file = Path(config_path).expanduser()
+    from mrlfads.run import run
 
-if not config_file.is_absolute():
-    config_file = (Path.cwd() / config_file).resolve()
-cfg_dir = config_file.parent          # absolute directory containing YAMLs
-cfg_name = config_file.stem           # filename without extension, e.g. "main" for main.yaml
+    trial_dir = Path(train.get_context().get_trial_dir()).resolve()
+    os.chdir(trial_dir)
 
-with initialize_config_dir(version_base="1.1", config_dir=str(cfg_dir)):
-    config = compose(config_name=cfg_name)
+    area = trial_config["area"]
+    kl_u = float(trial_config["kl_u"])
+    config_file = Path(config_path).resolve()
 
-# Define trainable function
-def trainable(overrides, config_path):
-    os.chdir(train.get_context().get_trial_dir())
-    loss = run(config_path=config_path, overrides=overrides)
-    train.report({"loss": float(loss)})
-    
-# Run the hyperparameter search
-run_config = air.RunConfig(
-    storage_path=str(RUN_DIR.parent),
-    name=RUN_DIR.name,
-    checkpoint_config=air.CheckpointConfig(
-        checkpoint_at_end=False,
-        checkpoint_frequency=0,
-        num_to_keep=1,
-    ),
-)
-tuner = tune.Tuner(
-    tune.with_resources(
-        tune.with_parameters(trainable, config_path=str(config_file)),
-        resources=RESOURCES_PER_TRIAL,
-    ),
-    param_space=HYPERPARAM_SPACE,
-    run_config=run_config,
-)
-results = tuner.fit()
-best = results.get_best_result(metric="loss", mode="min")
-print("Best configuration:", best.config)
-print("Best validation loss:", best.metrics["loss"])
-print("Trial directory:", best.path)
+    # 1. Compose the original multi-area configuration.
+    with initialize_config_dir(
+        version_base="1.1",
+        config_dir=str(config_file.parent),
+    ):
+        cfg = compose(config_name=config_file.stem)
 
-ray.shutdown()
+    # 2. Convert this trial to a single-area model.
+    with open_dict(cfg):
+        cfg.seed = int(trial_config["seed"])
+
+        cfg.datamodule.area_names = [area]
+        cfg.model.num_other_areas = 0
+        cfg.model.detach_hn = True
+
+        # Tune inferred-input KL; hold IC KL fixed.
+        cfg.model.kl_co_scale = kl_u
+        cfg.model.kl_ic_scale = kl_u
+
+    # Check that this area actually has inferred inputs enabled.
+    area_cfg = cfg.model.areas_params[area]
+    for key in ("ci_enc_dim", "con_dim", "co_dim"):
+        if area_cfg[key] <= 0:
+            raise ValueError(
+                f"{area}: {key} must be positive to tune inferred-input KL"
+            )
+
+    # 3. Resolve interpolations and save a standalone trial config.
+    # The composed config contains the selected settings from all
+    # config groups, so run() no longer needs their original YAMLs.
+    trial_config_path = trial_dir / "trial_config.yaml"
+
+    OmegaConf.save(config=cfg, f=str(trial_config_path), resolve=True,)
+
+    # 4. Train 
+    model, datamodule, _ = run(config_path=str(trial_config_path), train=True,)
+
+    # 5. Evaluate the final trained weights on validation trials.
+    evaluator = pl.Trainer(
+        accelerator="gpu",
+        devices=1,
+        logger=False,
+        enable_checkpointing=False,
+        enable_progress_bar=False,
+    )
+
+    validation_results = evaluator.validate(model=model, datamodule=datamodule, verbose=False,)
+
+    metric_name = f"valid/{area}/hn"
+    metrics = validation_results[0]
+
+    if metric_name not in metrics:
+        raise RuntimeError(
+            f"Missing metric {metric_name}. "
+            f"Available metrics: {list(metrics)}"
+        )
+
+    holdout_loss = float(metrics[metric_name])
+
+    train.report({"holdout_loss": holdout_loss})
+
+
+if __name__ == "__main__":
+    project_name = CUR_DIR.name
+    run_name = (
+        f"{project_name}_sr_klu_"
+        f"{datetime.now():%y%m%d%H%M}"
+    )
+
+    run_dir = Path(path.resultpath).expanduser().resolve() / run_name
+    run_dir.mkdir(parents=True, exist_ok=False)
+
+    shutil.copyfile(SCRIPT_PATH, run_dir / SCRIPT_PATH.name)
+
+    run_config = air.RunConfig(storage_path=str(run_dir.parent), name=run_dir.name)
+
+    tuner = tune.Tuner(
+        tune.with_resources(
+            tune.with_parameters(trainable,config_path=str(CONFIG_PATH)),
+            resources=RESOURCES_PER_TRIAL),
+        param_space=HYPERPARAM_SPACE,
+        tune_config=tune.TuneConfig(
+            metric="holdout_loss",
+            mode="min",
+            max_concurrent_trials=MAX_CONCURRENT_TRIALS,
+        ),
+        run_config=run_config,
+    )
+
+    try:
+        results = tuner.fit()
+        best_by_area = {}
+
+        for area in AREAS:
+            candidates = [result for result in results if result.error is None and result.config["area"] == area and "holdout_loss" in result.metrics]
+
+            if not candidates:
+                print(f"{area}: no successful trials")
+                continue
+
+            best = min(candidates, key=lambda result: result.metrics["holdout_loss"])
+
+            best_by_area[area] = {
+                "kl_co_scale": float(best.config["kl_u"]),
+                "holdout_loss": float(best.metrics["holdout_loss"]),
+                "trial_dir": str(best.path),
+            }
+
+            print(
+                f"{area}: "
+                f"KL(u)={best.config['kl_u']:g}, "
+                f"holdout loss={best.metrics['holdout_loss']:.6f}\n"
+                f"  Trial directory: {best.path}"
+            )
+
+        OmegaConf.save(
+            config=OmegaConf.create(best_by_area),
+            f=str(run_dir / "best_kl_by_area.yaml"),
+        )
+
+    finally:
+        ray.shutdown()
