@@ -2,7 +2,7 @@ _target_: mrlfads.model.MRLFADS
 
 # ----- DATA ----- #
 # Dataset parameters
-num_other_areas: 3
+num_other_areas: 0
 seq_len: 62
 ic_enc_seq_len: 15 # before the first tower appears, use as IC, so dynamics of full evid period is estimated
 
