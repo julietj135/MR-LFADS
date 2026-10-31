@@ -25,7 +25,7 @@ weight_decay: 0.0
 
 # ----- REGULARIZATION ----- #
 # KL divergence regularization #may need to change this
-kl_start_epoch_co: 20
+kl_start_epoch_co: 50
 kl_increase_epoch_co: 200 
 kl_start_epoch_com: 150
 kl_increase_epoch_com: 100

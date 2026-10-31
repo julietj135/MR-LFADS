@@ -7,15 +7,12 @@ on_init_end_calls:
       tags:
         - "lr-AdamW"
     - _target_: mrlfads.callbacks.InferredRatesPlot
-      log_every_n_epochs: 10
+      log_every_n_epochs: 50
       smooth: false
+      n_samples: 8
     - _target_: mrlfads.callbacks.InferredPredsPlot
-      log_every_n_epochs: 10
+      log_every_n_epochs: 50
       smooth: false
+      n_samples: 8
     - _target_: mrlfads.callbacks.ProctorSummaryPlot
-      log_every_n_epochs: 10
-    - _target_: mrlfads.callbacks.CommunicationPSTHPlot
-      log_every_n_epochs: 10
-      var_name: batch
-    - _target_: mrlfads.callbacks.AnatomyPlot
-      log_every_n_epochs: 40
+      log_every_n_epochs: 50

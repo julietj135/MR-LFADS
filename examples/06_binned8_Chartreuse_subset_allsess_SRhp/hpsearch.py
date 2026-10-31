@@ -38,7 +38,7 @@ HYPERPARAM_SPACE = {
     "seed": 0,
 }
 
-RESOURCES_PER_TRIAL = {"cpu": 4, "gpu": 0.2}
+RESOURCES_PER_TRIAL = {"cpu": 2, "gpu": 0.2}
 MAX_CONCURRENT_TRIALS = 4
 # -----------------------------------
 
