@@ -65,18 +65,25 @@ def trainable(trial_config, config_path):
         cfg = compose(config_name=config_file.stem)
 
     # 2. Convert this trial to a single-area model.
+    # Update settings before resolving ${...} references.
     with open_dict(cfg):
         cfg.seed = int(trial_config["seed"])
-
         cfg.datamodule.area_names = [area]
         cfg.model.num_other_areas = 0
         cfg.model.detach_hn = True
 
-        # Tune inferred-input KL; hold IC KL fixed.
         cfg.model.kl_co_scale = kl_u
-        cfg.model.kl_ic_scale = kl_u
+        cfg.model.kl_ic_scale = kl_u  # Keep if tuning both KL penalties.
 
-    # Check that this area actually has inferred inputs enabled.
+    # Resolve all cross-area references before removing any areas.
+    resolved = OmegaConf.to_container(cfg, resolve=True)
+
+    # Explicitly replace the dictionaries with single-area dictionaries.
+    resolved["model"]["areas_params"] = {area: resolved["model"]["areas_params"][area]}
+    resolved["model"]["hn_indices"] = {area: resolved["model"]["hn_indices"][area]}
+
+    cfg = OmegaConf.create(resolved)
+
     area_cfg = cfg.model.areas_params[area]
     for key in ("ci_enc_dim", "con_dim", "co_dim"):
         if area_cfg[key] <= 0:
@@ -88,11 +95,32 @@ def trainable(trial_config, config_path):
     # The composed config contains the selected settings from all
     # config groups, so run() no longer needs their original YAMLs.
     trial_config_path = trial_dir / "trial_config.yaml"
+    OmegaConf.save(config=cfg, f=str(trial_config_path), resolve=True)
 
-    OmegaConf.save(config=cfg, f=str(trial_config_path), resolve=True,)
+    # Verify the actual file that run() will load.
+    saved = OmegaConf.load(str(trial_config_path))
+    assert list(saved.model.areas_params.keys()) == [area]
+    assert list(saved.datamodule.area_names) == [area]
+    assert list(saved.model.hn_indices.keys()) == [area]
+
+    print(
+        f"Trial area={area}; "
+        f"model areas={list(saved.model.areas_params.keys())}; "
+        f"data areas={list(saved.datamodule.area_names)}; "
+        f"config={trial_config_path}",
+        flush=True,
+    )
 
     # 4. Train 
     model, datamodule, _ = run(config_path=str(trial_config_path), train=True,)
+
+    # Check that this area actually has inferred inputs enabled.
+    area_cfg = cfg.model.areas_params[area]
+    for key in ("ci_enc_dim", "con_dim", "co_dim"):
+        if area_cfg[key] <= 0:
+            raise ValueError(
+                f"{area}: {key} must be positive to tune inferred-input KL"
+            )
 
     # 5. Evaluate the final trained weights on validation trials.
     evaluator = pl.Trainer(
