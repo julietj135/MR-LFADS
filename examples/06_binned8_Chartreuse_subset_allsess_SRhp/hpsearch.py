@@ -28,8 +28,6 @@ CUR_DIR = SCRIPT_PATH.parent
 CONFIG_PATH = CUR_DIR / "main.yaml"
 
 AREAS = ["MOp", "RSP", "SSp-tr", "VISp"]
-
-# Example grid: refine around the best value afterward.
 KL_U_VALUES = [0.001, 0.01, 0.1, 1.0, 10.0]
 
 HYPERPARAM_SPACE = {
