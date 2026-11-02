@@ -13,7 +13,7 @@ from omegaconf import OmegaConf, open_dict
 
 
 # ---------- PROJECT IMPORTS ----------
-MRLFADS_DIR = "/root/MR-LFADS"
+MRLFADS_DIR = "/project/bdoiron/juliet/MR-LFADS"
 
 if MRLFADS_DIR not in sys.path:
     sys.path.insert(0, MRLFADS_DIR)
@@ -42,8 +42,16 @@ HYPERPARAM_SPACE = {
     "seed": 0,
 }
 
-RESOURCES_PER_TRIAL = {"cpu": 2, "gpu": 0.2}
-MAX_CONCURRENT_TRIALS = 4
+ALLOCATED_CPUS = int(os.environ["SLURM_CPUS_PER_TASK"])
+
+CPUS_PER_TRIAL = 2
+RESOURCES_PER_TRIAL = {"cpu": CPUS_PER_TRIAL, "gpu": 0.2}
+
+MAX_CONCURRENT_TRIALS = min(ALLOCATED_CPUS // CPUS_PER_TRIAL,5)
+
+if MAX_CONCURRENT_TRIALS < 1:
+    raise ValueError("Request at least 2 CPUs for this configuration.")
+
 # -----------------------------------
 
 
@@ -165,6 +173,13 @@ if __name__ == "__main__":
     shutil.copyfile(SCRIPT_PATH, run_dir / SCRIPT_PATH.name)
 
     run_config = air.RunConfig(storage_path=str(run_dir.parent), name=run_dir.name)
+    
+    ray.init(
+        address="local",
+        num_cpus=int(os.environ["SLURM_CPUS_PER_TASK"]),
+        num_gpus=1,
+        include_dashboard=False,
+    )
 
     tuner = tune.Tuner(
         tune.with_resources(
