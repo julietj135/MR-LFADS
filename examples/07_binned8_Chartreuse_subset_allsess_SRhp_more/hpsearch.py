@@ -28,10 +28,10 @@ CUR_DIR = SCRIPT_PATH.parent
 CONFIG_PATH = CUR_DIR / "main.yaml"
 
 AREAS = ["MOp", "RSP", "SSp-tr", "VISp"]
-KL_U_VALUES = [0.001, 0.01, 0.1, 1.0, 10.0]
-KL_G_VALUES = [0.001, 0.01, 0.1, 1.0, 10.0]
-L2_VALUES = [1e2, 1e3, 1e4, 1e5] # recurrent weight regularization
-DROP_VALUES = [0.1, 0.2, 0.3, 0.4, 0.5] # drop out
+KL_U_VALUES = [0.01, 0.1, 1.0, 10.0]
+KL_G_VALUES = [0.01, 0.1, 1.0, 10.0]
+L2_VALUES = [1e3, 1e4, 1e5] # recurrent weight regularization
+DROP_VALUES = [0.1, 0.3, 0.5] # drop out
 
 HYPERPARAM_SPACE = {
     "area": tune.grid_search(AREAS),
