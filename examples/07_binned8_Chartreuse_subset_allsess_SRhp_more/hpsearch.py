@@ -186,6 +186,10 @@ if __name__ == "__main__":
         for area in AREAS:
             candidates = [result for result in results if result.error is None and result.config["area"] == area and "holdout_loss" in result.metrics]
 
+            if not candidates:
+                print(f"{area}: no successful trials")
+                continue
+            
             best = min(candidates, key=lambda result: result.metrics["holdout_loss"])
 
             best_by_area[area] = {
