@@ -11,6 +11,7 @@ from ray import train, tune, air
 from hydra import compose, initialize_config_dir
 from omegaconf import OmegaConf, open_dict
 
+import argparse
 
 # ---------- PROJECT IMPORTS ----------
 MRLFADS_DIR = "/project/bdoiron/juliet/MR-LFADS"
@@ -27,7 +28,16 @@ SCRIPT_PATH = Path(__file__).resolve()
 CUR_DIR = SCRIPT_PATH.parent
 CONFIG_PATH = CUR_DIR / "main.yaml"
 
-AREAS = ["MOp", "RSP", "SSp-tr", "VISp"]
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "area",
+    choices=["MOp", "RSP", "SSp-tr", "VISp"],
+    help="Area to run the hyperparameter search for",
+)
+args = parser.parse_args()
+
+AREAS = [args.area]
+# AREAS = ["MOp", "RSP", "SSp-tr", "VISp"]
 KL_U_VALUES = [0.01, 0.1, 1.0, 10.0]
 KL_G_VALUES = [0.01, 0.1, 1.0, 10.0]
 L2_VALUES = [1e3, 1e4, 1e5] # recurrent weight regularization
@@ -163,8 +173,9 @@ def trainable(trial_config, config_path):
 if __name__ == "__main__":
     project_name = CUR_DIR.name
     run_name = (
-        f"{project_name}_sr_"
-        f"{datetime.now():%y%m%d%H%M}"
+        f"{project_name}_sr_{args.area}_"
+        f"{datetime.now():%y%m%d%H%M%S}_"
+        f"{os.environ.get('SLURM_JOB_ID', 'local')}"
     )
 
     run_dir = Path(path.resultpath).expanduser().resolve() / run_name
