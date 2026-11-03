@@ -1,0 +1,502 @@
+_target_: mrlfads.model.MRLFADS
+
+# ----- DATA ----- #
+# Dataset parameters
+num_other_areas: 0
+seq_len: 62
+ic_enc_seq_len: 15 # before the first tower appears, use as IC, so dynamics of full evid period is estimated
+
+# Validation: Holdout Neurons
+hn_indices:
+  MOp: '${eval:"[[0, 1, 2, 3, 4] for _ in range(19)]"}'
+  RSP: ${model.hn_indices.MOp}
+  SSp-tr: ${model.hn_indices.MOp}
+  VISp: ${model.hn_indices.MOp}
+
+# ----- LEARNING RATE ----- #
+lr_init: 4.0e-3
+lr_stop: 1.0e-5
+lr_decay: 0.95
+lr_patience: 6
+lr_adam_beta1: 0.9
+lr_adam_beta2: 0.999
+lr_adam_epsilon: 1.0e-8
+weight_decay: 0.0
+
+# ----- REGULARIZATION ----- #
+# KL divergence regularization #may need to change this
+kl_start_epoch_co: 50
+kl_increase_epoch_co: 200 
+kl_start_epoch_com: 150
+kl_increase_epoch_com: 100
+kl_co_scale: 1
+kl_com_scale: 0.1
+kl_ic_scale: ${model.kl_co_scale}
+
+# L2 regularization
+l2_start_epoch: 100
+l2_increase_epoch: 80
+l2_scale: 1.0e+4
+
+# Other regularization
+dropout_rate: 0.3
+cell_clip: 5.0
+detach_hn: true
+
+# ----- MODEL ARCHITECTURE ----- #
+areas_params:
+    MOp:
+        # Data
+        num_neurons:
+          n0: 57
+          n1: ${model.areas_params.MOp.num_neurons.n0}
+          n2: ${model.areas_params.MOp.num_neurons.n0}
+          n3: ${model.areas_params.MOp.num_neurons.n0}
+          n4: ${model.areas_params.MOp.num_neurons.n0}
+          n5: ${model.areas_params.MOp.num_neurons.n0}
+          n6: ${model.areas_params.MOp.num_neurons.n0}
+          n7: ${model.areas_params.MOp.num_neurons.n0}
+          n8: ${model.areas_params.MOp.num_neurons.n0}
+          n9: ${model.areas_params.MOp.num_neurons.n0}
+          n10: ${model.areas_params.MOp.num_neurons.n0}
+          n11: ${model.areas_params.MOp.num_neurons.n0}
+          n12: ${model.areas_params.MOp.num_neurons.n0}
+          n13: ${model.areas_params.MOp.num_neurons.n0}
+          n14: ${model.areas_params.MOp.num_neurons.n0}
+          n15: ${model.areas_params.MOp.num_neurons.n0}
+          n16: ${model.areas_params.MOp.num_neurons.n0}
+          n17: ${model.areas_params.MOp.num_neurons.n0}
+          n18: ${model.areas_params.MOp.num_neurons.n0}
+        ext_input_dim: 0
+    
+        # Architecture
+        data_dim: 64
+        ic_enc_dim: 32 
+        ci_enc_dim: 32 
+        ci_lag: 0
+        con_dim: 64 
+        co_dim: 6
+        ic_dim: 32 
+        gen_dim: ${eval:${model.areas_params.MOp.num_neurons.n0} * 2}
+        fac_dim: ${model.areas_params.MOp.data_dim}
+        com_dim: 10
+
+        # Readin / Readout
+        readin:
+          _target_: torch.nn.ModuleList
+          modules:
+            - _target_: mrlfads.utils.torch_utils.ScaledLinear
+              in_features: ${model.areas_params.MOp.num_neurons.n0}
+              out_features: ${model.areas_params.MOp.data_dim}
+            - ${model.areas_params.MOp.readin.modules.0} # session 1
+            - ${model.areas_params.MOp.readin.modules.0} # session 2
+            - ${model.areas_params.MOp.readin.modules.0} # session 3
+            - ${model.areas_params.MOp.readin.modules.0} # session 4
+            - ${model.areas_params.MOp.readin.modules.0} # session 5
+            - ${model.areas_params.MOp.readin.modules.0} # session 6
+            - ${model.areas_params.MOp.readin.modules.0} # session 7
+            - ${model.areas_params.MOp.readin.modules.0} # session 8
+            - ${model.areas_params.MOp.readin.modules.0} # session 9
+            - ${model.areas_params.MOp.readin.modules.0} # session 10
+            - ${model.areas_params.MOp.readin.modules.0} # session 11
+            - ${model.areas_params.MOp.readin.modules.0} # session 12
+            - ${model.areas_params.MOp.readin.modules.0} # session 13
+            - ${model.areas_params.MOp.readin.modules.0} # session 14
+            - ${model.areas_params.MOp.readin.modules.0} # session 15
+            - ${model.areas_params.MOp.readin.modules.0} # session 16
+            - ${model.areas_params.MOp.readin.modules.0} # session 17
+            - ${model.areas_params.MOp.readin.modules.0} # session 18
+        
+        readout:
+          _target_: torch.nn.ModuleList
+          modules:
+            - _target_: mrlfads.utils.torch_utils.ScaledLinear
+              in_features: ${model.areas_params.MOp.fac_dim}
+              out_features: ${eval:${model.areas_params.MOp.num_neurons.n0} * 2}
+            - ${model.areas_params.MOp.readout.modules.0} # session 1
+            - ${model.areas_params.MOp.readout.modules.0} # session 2
+            - ${model.areas_params.MOp.readout.modules.0} # session 3
+            - ${model.areas_params.MOp.readout.modules.0} # session 4
+            - ${model.areas_params.MOp.readout.modules.0} # session 5
+            - ${model.areas_params.MOp.readout.modules.0} # session 6
+            - ${model.areas_params.MOp.readout.modules.0} # session 7
+            - ${model.areas_params.MOp.readout.modules.0} # session 8
+            - ${model.areas_params.MOp.readout.modules.0} # session 9
+            - ${model.areas_params.MOp.readout.modules.0} # session 10
+            - ${model.areas_params.MOp.readout.modules.0} # session 11
+            - ${model.areas_params.MOp.readout.modules.0} # session 12
+            - ${model.areas_params.MOp.readout.modules.0} # session 13
+            - ${model.areas_params.MOp.readout.modules.0} # session 14
+            - ${model.areas_params.MOp.readout.modules.0} # session 15
+            - ${model.areas_params.MOp.readout.modules.0} # session 16
+            - ${model.areas_params.MOp.readout.modules.0} # session 17
+            - ${model.areas_params.MOp.readout.modules.0} # session 18
+
+        # Priors / Posteriors
+        output_dist:
+          _target_: mrlfads.utils.torch_utils.Gaussian
+        co_prior:
+          _target_: mrlfads.utils.torch_utils.MultivariateNormal
+          mean: 0
+          variance: 0.1
+          shape: ${model.areas_params.MOp.co_dim}
+        ic_prior:
+          _target_: mrlfads.utils.torch_utils.MultivariateNormal
+          mean: 0
+          variance: 0.1
+          shape: ${model.areas_params.MOp.ic_dim}
+        com_prior:
+          _target_: mrlfads.utils.torch_utils.MultivariateNormal
+          mean: 0
+          variance: 0.1
+          shape: ${eval:${model.areas_params.MOp.com_dim} * ${model.num_other_areas}}
+        ic_post_var_min: 1.0e-4
+        co_post_var_min: 1.0e-4
+        com_post_var_min: 1.0e-4
+        
+        # Regularization
+        kl_ic_scale: ${model.kl_ic_scale}
+        kl_co_scale: ${model.kl_co_scale}
+        kl_com_scale: ${model.kl_com_scale}
+        
+    RSP:
+        # Data
+        num_neurons:
+          n0: 50
+          n1: ${model.areas_params.RSP.num_neurons.n0}
+          n2: ${model.areas_params.RSP.num_neurons.n0}
+          n3: ${model.areas_params.RSP.num_neurons.n0}
+          n4: ${model.areas_params.RSP.num_neurons.n0}
+          n5: ${model.areas_params.RSP.num_neurons.n0}
+          n6: ${model.areas_params.RSP.num_neurons.n0}
+          n7: ${model.areas_params.RSP.num_neurons.n0}
+          n8: ${model.areas_params.RSP.num_neurons.n0}
+          n9: ${model.areas_params.RSP.num_neurons.n0}
+          n10: ${model.areas_params.RSP.num_neurons.n0}
+          n11: ${model.areas_params.RSP.num_neurons.n0}
+          n12: ${model.areas_params.RSP.num_neurons.n0}
+          n13: ${model.areas_params.RSP.num_neurons.n0}
+          n14: ${model.areas_params.RSP.num_neurons.n0}
+          n15: ${model.areas_params.RSP.num_neurons.n0}
+          n16: ${model.areas_params.RSP.num_neurons.n0}
+          n17: ${model.areas_params.RSP.num_neurons.n0}
+          n18: ${model.areas_params.RSP.num_neurons.n0}
+        ext_input_dim: 0
+    
+        # Architecture
+        data_dim: 64
+        ic_enc_dim: 32 
+        ci_enc_dim: 32 
+        ci_lag: 0
+        con_dim: 64 
+        co_dim: 6
+        ic_dim: 32 
+        gen_dim: ${eval:${model.areas_params.RSP.num_neurons.n0} * 2}
+        fac_dim: ${model.areas_params.RSP.data_dim}
+        com_dim: 10
+
+        # Readin / Readout
+        readin:
+          _target_: torch.nn.ModuleList
+          modules:
+            - _target_: mrlfads.utils.torch_utils.ScaledLinear
+              in_features: ${model.areas_params.RSP.num_neurons.n0}
+              out_features: ${model.areas_params.RSP.data_dim}
+            - ${model.areas_params.RSP.readin.modules.0} # session 1
+            - ${model.areas_params.RSP.readin.modules.0} # session 2
+            - ${model.areas_params.RSP.readin.modules.0} # session 3
+            - ${model.areas_params.RSP.readin.modules.0} # session 4
+            - ${model.areas_params.RSP.readin.modules.0} # session 5
+            - ${model.areas_params.RSP.readin.modules.0} # session 6
+            - ${model.areas_params.RSP.readin.modules.0} # session 7
+            - ${model.areas_params.RSP.readin.modules.0} # session 8
+            - ${model.areas_params.RSP.readin.modules.0} # session 9
+            - ${model.areas_params.RSP.readin.modules.0} # session 10
+            - ${model.areas_params.RSP.readin.modules.0} # session 11
+            - ${model.areas_params.RSP.readin.modules.0} # session 12
+            - ${model.areas_params.RSP.readin.modules.0} # session 13
+            - ${model.areas_params.RSP.readin.modules.0} # session 14
+            - ${model.areas_params.RSP.readin.modules.0} # session 15
+            - ${model.areas_params.RSP.readin.modules.0} # session 16
+            - ${model.areas_params.RSP.readin.modules.0} # session 17
+            - ${model.areas_params.RSP.readin.modules.0} # session 18
+        
+        readout:
+          _target_: torch.nn.ModuleList
+          modules:
+            - _target_: mrlfads.utils.torch_utils.ScaledLinear
+              in_features: ${model.areas_params.RSP.fac_dim}
+              out_features: ${eval:${model.areas_params.RSP.num_neurons.n0} * 2}
+            - ${model.areas_params.RSP.readout.modules.0} # session 1
+            - ${model.areas_params.RSP.readout.modules.0} # session 2
+            - ${model.areas_params.RSP.readout.modules.0} # session 3
+            - ${model.areas_params.RSP.readout.modules.0} # session 4
+            - ${model.areas_params.RSP.readout.modules.0} # session 5
+            - ${model.areas_params.RSP.readout.modules.0} # session 6
+            - ${model.areas_params.RSP.readout.modules.0} # session 7
+            - ${model.areas_params.RSP.readout.modules.0} # session 8
+            - ${model.areas_params.RSP.readout.modules.0} # session 9
+            - ${model.areas_params.RSP.readout.modules.0} # session 10
+            - ${model.areas_params.RSP.readout.modules.0} # session 11
+            - ${model.areas_params.RSP.readout.modules.0} # session 12
+            - ${model.areas_params.RSP.readout.modules.0} # session 13
+            - ${model.areas_params.RSP.readout.modules.0} # session 14
+            - ${model.areas_params.RSP.readout.modules.0} # session 15
+            - ${model.areas_params.RSP.readout.modules.0} # session 16
+            - ${model.areas_params.RSP.readout.modules.0} # session 17
+            - ${model.areas_params.RSP.readout.modules.0} # session 18
+
+        # Priors / Posteriors
+        output_dist:
+          _target_: mrlfads.utils.torch_utils.Gaussian
+        co_prior:
+          _target_: mrlfads.utils.torch_utils.MultivariateNormal
+          mean: 0
+          variance: 0.1
+          shape: ${model.areas_params.RSP.co_dim}
+        ic_prior:
+          _target_: mrlfads.utils.torch_utils.MultivariateNormal
+          mean: 0
+          variance: 0.1
+          shape: ${model.areas_params.RSP.ic_dim}
+        com_prior:
+          _target_: mrlfads.utils.torch_utils.MultivariateNormal
+          mean: 0
+          variance: 0.1
+          shape: ${eval:${model.areas_params.RSP.com_dim} * ${model.num_other_areas}}
+        ic_post_var_min: 1.0e-4
+        co_post_var_min: 1.0e-4
+        com_post_var_min: 1.0e-4
+        
+        # Regularization
+        kl_ic_scale: ${model.kl_ic_scale}
+        kl_co_scale: ${model.kl_co_scale}
+        kl_com_scale: ${model.kl_com_scale}
+        
+    SSp-tr:
+        # Data
+        num_neurons:
+          n0: 60
+          n1: ${model.areas_params.SSp-tr.num_neurons.n0}
+          n2: ${model.areas_params.SSp-tr.num_neurons.n0}
+          n3: ${model.areas_params.SSp-tr.num_neurons.n0}
+          n4: ${model.areas_params.SSp-tr.num_neurons.n0}
+          n5: ${model.areas_params.SSp-tr.num_neurons.n0}
+          n6: ${model.areas_params.SSp-tr.num_neurons.n0}
+          n7: ${model.areas_params.SSp-tr.num_neurons.n0}
+          n8: ${model.areas_params.SSp-tr.num_neurons.n0}
+          n9: ${model.areas_params.SSp-tr.num_neurons.n0}
+          n10: ${model.areas_params.SSp-tr.num_neurons.n0}
+          n11: ${model.areas_params.SSp-tr.num_neurons.n0}
+          n12: ${model.areas_params.SSp-tr.num_neurons.n0}
+          n13: ${model.areas_params.SSp-tr.num_neurons.n0}
+          n14: ${model.areas_params.SSp-tr.num_neurons.n0}
+          n15: ${model.areas_params.SSp-tr.num_neurons.n0}
+          n16: ${model.areas_params.SSp-tr.num_neurons.n0}
+          n17: ${model.areas_params.SSp-tr.num_neurons.n0}
+          n18: ${model.areas_params.SSp-tr.num_neurons.n0}
+        ext_input_dim: 0
+    
+        # Architecture
+        data_dim: 64
+        ic_enc_dim: 32 
+        ci_enc_dim: 32 
+        ci_lag: 0
+        con_dim: 64 
+        co_dim: 6
+        ic_dim: 32 
+        gen_dim: ${eval:${model.areas_params.SSp-tr.num_neurons.n0} * 2}
+        fac_dim: ${model.areas_params.SSp-tr.data_dim}
+        com_dim: 10
+
+        # Readin / Readout
+        readin:
+          _target_: torch.nn.ModuleList
+          modules:
+            - _target_: mrlfads.utils.torch_utils.ScaledLinear
+              in_features: ${model.areas_params.SSp-tr.num_neurons.n0}
+              out_features: ${model.areas_params.SSp-tr.data_dim}
+            - ${model.areas_params.SSp-tr.readin.modules.0} # session 1
+            - ${model.areas_params.SSp-tr.readin.modules.0} # session 2
+            - ${model.areas_params.SSp-tr.readin.modules.0} # session 3
+            - ${model.areas_params.SSp-tr.readin.modules.0} # session 4
+            - ${model.areas_params.SSp-tr.readin.modules.0} # session 5
+            - ${model.areas_params.SSp-tr.readin.modules.0} # session 6
+            - ${model.areas_params.SSp-tr.readin.modules.0} # session 7
+            - ${model.areas_params.SSp-tr.readin.modules.0} # session 8
+            - ${model.areas_params.SSp-tr.readin.modules.0} # session 9
+            - ${model.areas_params.SSp-tr.readin.modules.0} # session 10
+            - ${model.areas_params.SSp-tr.readin.modules.0} # session 11
+            - ${model.areas_params.SSp-tr.readin.modules.0} # session 12
+            - ${model.areas_params.SSp-tr.readin.modules.0} # session 13
+            - ${model.areas_params.SSp-tr.readin.modules.0} # session 14
+            - ${model.areas_params.SSp-tr.readin.modules.0} # session 15
+            - ${model.areas_params.SSp-tr.readin.modules.0} # session 16
+            - ${model.areas_params.SSp-tr.readin.modules.0} # session 17
+            - ${model.areas_params.SSp-tr.readin.modules.0} # session 18
+        
+        readout:
+          _target_: torch.nn.ModuleList
+          modules:
+            - _target_: mrlfads.utils.torch_utils.ScaledLinear
+              in_features: ${model.areas_params.SSp-tr.fac_dim}
+              out_features: ${eval:${model.areas_params.SSp-tr.num_neurons.n0} * 2}
+            - ${model.areas_params.SSp-tr.readout.modules.0} # session 1
+            - ${model.areas_params.SSp-tr.readout.modules.0} # session 2
+            - ${model.areas_params.SSp-tr.readout.modules.0} # session 3
+            - ${model.areas_params.SSp-tr.readout.modules.0} # session 4
+            - ${model.areas_params.SSp-tr.readout.modules.0} # session 5
+            - ${model.areas_params.SSp-tr.readout.modules.0} # session 6
+            - ${model.areas_params.SSp-tr.readout.modules.0} # session 7
+            - ${model.areas_params.SSp-tr.readout.modules.0} # session 8
+            - ${model.areas_params.SSp-tr.readout.modules.0} # session 9
+            - ${model.areas_params.SSp-tr.readout.modules.0} # session 10
+            - ${model.areas_params.SSp-tr.readout.modules.0} # session 11
+            - ${model.areas_params.SSp-tr.readout.modules.0} # session 12
+            - ${model.areas_params.SSp-tr.readout.modules.0} # session 13
+            - ${model.areas_params.SSp-tr.readout.modules.0} # session 14
+            - ${model.areas_params.SSp-tr.readout.modules.0} # session 15
+            - ${model.areas_params.SSp-tr.readout.modules.0} # session 16
+            - ${model.areas_params.SSp-tr.readout.modules.0} # session 17
+            - ${model.areas_params.SSp-tr.readout.modules.0} # session 18
+
+        # Priors / Posteriors
+        output_dist:
+          _target_: mrlfads.utils.torch_utils.Gaussian
+        co_prior:
+          _target_: mrlfads.utils.torch_utils.MultivariateNormal
+          mean: 0
+          variance: 0.1
+          shape: ${model.areas_params.SSp-tr.co_dim}
+        ic_prior:
+          _target_: mrlfads.utils.torch_utils.MultivariateNormal
+          mean: 0
+          variance: 0.1
+          shape: ${model.areas_params.SSp-tr.ic_dim}
+        com_prior:
+          _target_: mrlfads.utils.torch_utils.MultivariateNormal
+          mean: 0
+          variance: 0.1
+          shape: ${eval:${model.areas_params.SSp-tr.com_dim} * ${model.num_other_areas}}
+        ic_post_var_min: 1.0e-4
+        co_post_var_min: 1.0e-4
+        com_post_var_min: 1.0e-4
+        
+        # Regularization
+        kl_ic_scale: ${model.kl_ic_scale}
+        kl_co_scale: ${model.kl_co_scale}
+        kl_com_scale: ${model.kl_com_scale}
+        
+    VISp:
+        # Data
+        num_neurons:
+          n0: 43
+          n1: ${model.areas_params.VISp.num_neurons.n0}
+          n2: ${model.areas_params.VISp.num_neurons.n0}
+          n3: ${model.areas_params.VISp.num_neurons.n0}
+          n4: ${model.areas_params.VISp.num_neurons.n0}
+          n5: ${model.areas_params.VISp.num_neurons.n0}
+          n6: ${model.areas_params.VISp.num_neurons.n0}
+          n7: ${model.areas_params.VISp.num_neurons.n0}
+          n8: ${model.areas_params.VISp.num_neurons.n0}
+          n9: ${model.areas_params.VISp.num_neurons.n0}
+          n10: ${model.areas_params.VISp.num_neurons.n0}
+          n11: ${model.areas_params.VISp.num_neurons.n0}
+          n12: ${model.areas_params.VISp.num_neurons.n0}
+          n13: ${model.areas_params.VISp.num_neurons.n0}
+          n14: ${model.areas_params.VISp.num_neurons.n0}
+          n15: ${model.areas_params.VISp.num_neurons.n0}
+          n16: ${model.areas_params.VISp.num_neurons.n0}
+          n17: ${model.areas_params.VISp.num_neurons.n0}
+          n18: ${model.areas_params.VISp.num_neurons.n0}
+        ext_input_dim: 0
+    
+        # Architecture
+        data_dim: 64
+        ic_enc_dim: 32 
+        ci_enc_dim: 32 
+        ci_lag: 0
+        con_dim: 64 
+        co_dim: 6
+        ic_dim: 32 
+        gen_dim: ${eval:${model.areas_params.VISp.num_neurons.n0} * 2}
+        fac_dim: ${model.areas_params.VISp.data_dim}
+        com_dim: 10
+
+        # Readin / Readout
+        readin:
+          _target_: torch.nn.ModuleList
+          modules:
+            - _target_: mrlfads.utils.torch_utils.ScaledLinear
+              in_features: ${model.areas_params.VISp.num_neurons.n0}
+              out_features: ${model.areas_params.VISp.data_dim}
+            - ${model.areas_params.VISp.readin.modules.0} # session 1
+            - ${model.areas_params.VISp.readin.modules.0} # session 2
+            - ${model.areas_params.VISp.readin.modules.0} # session 3
+            - ${model.areas_params.VISp.readin.modules.0} # session 4
+            - ${model.areas_params.VISp.readin.modules.0} # session 5
+            - ${model.areas_params.VISp.readin.modules.0} # session 6
+            - ${model.areas_params.VISp.readin.modules.0} # session 7
+            - ${model.areas_params.VISp.readin.modules.0} # session 8
+            - ${model.areas_params.VISp.readin.modules.0} # session 9
+            - ${model.areas_params.VISp.readin.modules.0} # session 10
+            - ${model.areas_params.VISp.readin.modules.0} # session 11
+            - ${model.areas_params.VISp.readin.modules.0} # session 12
+            - ${model.areas_params.VISp.readin.modules.0} # session 13
+            - ${model.areas_params.VISp.readin.modules.0} # session 14
+            - ${model.areas_params.VISp.readin.modules.0} # session 15
+            - ${model.areas_params.VISp.readin.modules.0} # session 16
+            - ${model.areas_params.VISp.readin.modules.0} # session 17
+            - ${model.areas_params.VISp.readin.modules.0} # session 18
+        
+        readout:
+          _target_: torch.nn.ModuleList
+          modules:
+            - _target_: mrlfads.utils.torch_utils.ScaledLinear
+              in_features: ${model.areas_params.VISp.fac_dim}
+              out_features: ${eval:${model.areas_params.VISp.num_neurons.n0} * 2}
+            - ${model.areas_params.VISp.readout.modules.0} # session 1
+            - ${model.areas_params.VISp.readout.modules.0} # session 2
+            - ${model.areas_params.VISp.readout.modules.0} # session 3
+            - ${model.areas_params.VISp.readout.modules.0} # session 4
+            - ${model.areas_params.VISp.readout.modules.0} # session 5
+            - ${model.areas_params.VISp.readout.modules.0} # session 6
+            - ${model.areas_params.VISp.readout.modules.0} # session 7
+            - ${model.areas_params.VISp.readout.modules.0} # session 8
+            - ${model.areas_params.VISp.readout.modules.0} # session 9
+            - ${model.areas_params.VISp.readout.modules.0} # session 10
+            - ${model.areas_params.VISp.readout.modules.0} # session 11
+            - ${model.areas_params.VISp.readout.modules.0} # session 12
+            - ${model.areas_params.VISp.readout.modules.0} # session 13
+            - ${model.areas_params.VISp.readout.modules.0} # session 14
+            - ${model.areas_params.VISp.readout.modules.0} # session 15
+            - ${model.areas_params.VISp.readout.modules.0} # session 16
+            - ${model.areas_params.VISp.readout.modules.0} # session 17
+            - ${model.areas_params.VISp.readout.modules.0} # session 18
+
+        # Priors / Posteriors
+        output_dist:
+          _target_: mrlfads.utils.torch_utils.Gaussian
+        co_prior:
+          _target_: mrlfads.utils.torch_utils.MultivariateNormal
+          mean: 0
+          variance: 0.1
+          shape: ${model.areas_params.VISp.co_dim}
+        ic_prior:
+          _target_: mrlfads.utils.torch_utils.MultivariateNormal
+          mean: 0
+          variance: 0.1
+          shape: ${model.areas_params.VISp.ic_dim}
+        com_prior:
+          _target_: mrlfads.utils.torch_utils.MultivariateNormal
+          mean: 0
+          variance: 0.1
+          shape: ${eval:${model.areas_params.VISp.com_dim} * ${model.num_other_areas}}
+        ic_post_var_min: 1.0e-4
+        co_post_var_min: 1.0e-4
+        com_post_var_min: 1.0e-4
+        
+        # Regularization
+        kl_ic_scale: ${model.kl_ic_scale}
+        kl_co_scale: ${model.kl_co_scale}
+        kl_com_scale: ${model.kl_com_scale}

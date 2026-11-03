@@ -39,14 +39,12 @@ args = parser.parse_args()
 AREAS = [args.area]
 # AREAS = ["MOp", "RSP", "SSp-tr", "VISp"]
 KL_U_VALUES = [0.01, 0.1, 1.0, 10.0]
-KL_G_VALUES = [0.01, 0.1, 1.0, 10.0]
 L2_VALUES = [1e3, 1e4, 1e5] # recurrent weight regularization
 DROP_VALUES = [0.1, 0.3, 0.5] # drop out
 
 HYPERPARAM_SPACE = {
     "area": tune.grid_search(AREAS),
     "kl_u": tune.grid_search(KL_U_VALUES),
-    "kl_g": tune.grid_search(KL_G_VALUES),
     "l2_scale": tune.grid_search(L2_VALUES),
     "dropout_rate": tune.grid_search(DROP_VALUES),
     "seed": 0,
@@ -96,7 +94,7 @@ def trainable(trial_config, config_path):
         cfg.model.kl_co_scale = float(trial_config["kl_u"])
         cfg.model.l2_scale = float(trial_config["l2_scale"])
         cfg.model.dropout_rate = float(trial_config["dropout_rate"])
-        cfg.model.kl_ic_scale = float(trial_config["kl_g"])
+        cfg.model.kl_ic_scale = float(trial_config["kl_u"])
 
     # Resolve all cross-area references before removing any areas.
     resolved = OmegaConf.to_container(cfg, resolve=True)
@@ -135,7 +133,31 @@ def trainable(trial_config, config_path):
     )
 
     # 4. Train 
-    model, datamodule, _ = run(config_path=str(trial_config_path), train=True,)
+    # model, datamodule, _ = run(config_path=str(trial_config_path), train=True,)
+    
+    import torch._inductor.config as inductor_config
+    
+    # Work around the failing matrix-padding optimization.
+    inductor_config.shape_padding = False
+    
+    try:
+        model, datamodule, _ = run(config_path=str(trial_config_path), train=True,)
+    except Exception:
+        import traceback
+
+        error_text = traceback.format_exc()
+        error_path = trial_dir / "original_training_error.txt"
+        error_path.write_text(error_text)
+
+        print(
+            f"\nOriginal training failure:\n{error_text}"
+            f"\nSaved to: {error_path}",
+            file=sys.stderr,
+            flush=True,
+        )
+
+        # Pass Ray a simple exception rather than the compiler exception.
+        raise RuntimeError(f"Training failed; original traceback:\n{error_text}") from None
 
     # Check that this area actually has inferred inputs enabled.
     area_cfg = cfg.model.areas_params[area]
@@ -222,7 +244,7 @@ if __name__ == "__main__":
                 "kl_co_scale": float(best.config["kl_u"]),
                 "l2_scale": float(best.config["l2_scale"]),
                 "dropout_rate": float(best.config["dropout_rate"]),
-                "kl_ic_scale": float(best.config["kl_g"]),
+                "kl_ic_scale": float(best.config["kl_u"]),
                 "holdout_loss": float(best.metrics["holdout_loss"]),
                 "trial_dir": str(best.path),
             }
