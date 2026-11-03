@@ -25,7 +25,7 @@ kl_start_epoch_co: 50
 kl_increase_epoch_co: 200 
 kl_start_epoch_com: 150
 kl_increase_epoch_com: 100
-kl_co_scale: 1
+kl_co_scale: 0.1 # tuned
 kl_com_scale: 0.1
 kl_ic_scale: ${model.kl_co_scale}
 

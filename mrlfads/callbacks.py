@@ -464,7 +464,9 @@ class InferredPredsPlot:
                         axes[count][ib].plot(infer_data[ib, :, jn], "b")
                         axes[count][ib].plot(smoothed_value, "k--")
 
-                    axes[count][0].set_ylabel(f"area {area_name}, neuron #{jn}")
+                    original_index = int(pl_module.hparams.hn_indices[area_name][s][jn])
+                    axes[count][0].set_ylabel(f"area {area_name}, neuron #{original_index}")
+                    # axes[count][0].set_ylabel(f"area {area_name}, neuron #{jn}")
                     count += 1
 
             plt.tight_layout()
