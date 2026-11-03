@@ -7,11 +7,7 @@ seq_len: 62
 ic_enc_seq_len: 15 # before the first tower appears, use as IC, so dynamics of full evid period is estimated
 
 # Validation: Holdout Neurons
-hn_indices:
-  MOp: '${eval:"import random; random.sample(range(model.num_neurons.MOp), max(1, int(model.num_neurons.MOp * 0.10)))"}'
-  RSP: '${eval:"import random; random.sample(range(model.num_neurons.RSP), max(1, int(model.num_neurons.RSP * 0.10)))"}'
-  SSp-tr: '${eval:"import random; random.sample(range(model.num_neurons.SSp-tr), max(1, int(model.num_neurons.SSp-tr * 0.10)))"}'
-  VISp: '${eval:"import random; random.sample(range(model.num_neurons.VISp), max(1, int(model.num_neurons.VISp * 0.10)))"}'
+hn_indices: {}
 
 # ----- LEARNING RATE ----- #
 lr_init: 4.0e-3

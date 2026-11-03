@@ -13,6 +13,10 @@ from omegaconf import OmegaConf, open_dict
 
 import argparse
 
+import random
+# Keep this seed fixed across trials for comparable validation losses.
+holdout_seed = 42
+
 # ---------- PROJECT IMPORTS ----------
 MRLFADS_DIR = "/project/bdoiron/juliet/MR-LFADS"
 
@@ -85,6 +89,21 @@ def trainable(trial_config, config_path):
         cfg.datamodule.area_names = [area]
         cfg.model.num_other_areas = 0
         cfg.model.detach_hn = True
+        
+    # Randomly hold out 10% of neurons independently for each session.
+    neuron_counts = cfg.model.areas_params[area].num_neurons
+    heldout_indices = []
+
+    for session_idx in range(len(neuron_counts)):
+        n_neurons = int(neuron_counts[f"n{session_idx}"])
+        n_holdout = max(1, int(0.10 * n_neurons))
+
+        rng = random.Random(f"{holdout_seed}:{area}:{session_idx}")
+        indices = sorted(rng.sample(range(n_neurons), n_holdout))
+        heldout_indices.append(indices)
+
+    with open_dict(cfg):
+        cfg.model.hn_indices = {area: heldout_indices}
 
     # Resolve all cross-area references before removing any areas.
     resolved = OmegaConf.to_container(cfg, resolve=True)
