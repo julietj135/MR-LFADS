@@ -67,12 +67,12 @@ areas_params:
     
         # Architecture
         data_dim: 64
-        ic_enc_dim: 32 
-        ci_enc_dim: 32 
+        ic_enc_dim: 64 
+        ci_enc_dim: 64 
         ci_lag: 0
-        con_dim: 64 
+        con_dim: 128 
         co_dim: 6
-        ic_dim: 32 
+        ic_dim: 64 
         gen_dim: ${eval:${model.areas_params.MOp.num_neurons.n0} * 2}
         fac_dim: ${model.areas_params.MOp.data_dim}
         com_dim: 10
@@ -181,12 +181,12 @@ areas_params:
     
         # Architecture
         data_dim: 64
-        ic_enc_dim: 32 
-        ci_enc_dim: 32 
+        ic_enc_dim: 64 
+        ci_enc_dim: 64 
         ci_lag: 0
-        con_dim: 64 
+        con_dim: 128 
         co_dim: 6
-        ic_dim: 32 
+        ic_dim: 64 
         gen_dim: ${eval:${model.areas_params.RSP.num_neurons.n0} * 2}
         fac_dim: ${model.areas_params.RSP.data_dim}
         com_dim: 10
@@ -295,12 +295,12 @@ areas_params:
     
         # Architecture
         data_dim: 64
-        ic_enc_dim: 32 
-        ci_enc_dim: 32 
+        ic_enc_dim: 64 
+        ci_enc_dim: 64 
         ci_lag: 0
-        con_dim: 64 
+        con_dim: 128 
         co_dim: 6
-        ic_dim: 32 
+        ic_dim: 64 
         gen_dim: ${eval:${model.areas_params.SSp-tr.num_neurons.n0} * 2}
         fac_dim: ${model.areas_params.SSp-tr.data_dim}
         com_dim: 10
@@ -409,12 +409,12 @@ areas_params:
     
         # Architecture
         data_dim: 64
-        ic_enc_dim: 32 
-        ci_enc_dim: 32 
+        ic_enc_dim: 64 
+        ci_enc_dim: 64 
         ci_lag: 0
-        con_dim: 64 
+        con_dim: 128 
         co_dim: 6
-        ic_dim: 32 
+        ic_dim: 64 
         gen_dim: ${eval:${model.areas_params.VISp.num_neurons.n0} * 2}
         fac_dim: ${model.areas_params.VISp.data_dim}
         com_dim: 10
