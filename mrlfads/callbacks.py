@@ -972,7 +972,7 @@ class ComputeInitWeights:
 
                 with torch.no_grad():
                     readin[sess].weight.copy_(w)
-                    readout[sess].weight.copy_(w.t())
+                    # readout[sess].weight.copy_(w.t()) # changed to not reduce output size
                 
         vis.set_invisible(ax)
         ax.legend()
