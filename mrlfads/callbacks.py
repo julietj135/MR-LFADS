@@ -661,7 +661,7 @@ class CommunicationPSTHPlot:
                         perturbed_color = np.clip(colors[jcom][:3] + perturbation, 0.0, 1.0)
                         sub_color = (*perturbed_color, (jj + 1) / (com_dim + 1)) # colors[jcom] is the group color
                         if (jj == 0) and (ic == 0):
-                            ax_col[count].plot(com_kl[count_kl].cpu().detach().numpy(), color=sub_color, label=f"{num_other_areas_name[icom]}")
+                            ax_col[count].plot(com_kl[count_kl].cpu().detach().numpy(), color=sub_color, label=f"{num_other_areas_name[jcom]}")
                         else:
                             ax_col[count].plot(com_kl[count_kl].cpu().detach().numpy(), color=sub_color)
                         count_kl += 1
@@ -669,7 +669,7 @@ class CommunicationPSTHPlot:
                 count += 1
 
         plt.tight_layout()
-        plt.savefig(f"{SAVE_DIR}/communication_plot_epoch{trainer.current_epoch}.png")
+        plt.savefig(f"{SAVE_DIR}/comm_plot_{self.var_name}_epoch{trainer.current_epoch}.png")
         plt.close("all")
         return {}
     
@@ -790,26 +790,28 @@ class get_maximum_activity_units:
         pl_module.maximum_activity_units = lambda s, n_samples: {k: v[:n_samples] for k, v in session_units[s].items()}
     
 class get_conditions:
-    def __init__(self, run_steps=["valid"]):
+    def __init__(self, var_name="trial_type", run_steps=["valid"]):  # changed
         self.name = "get_conditions"
         self.run_steps = run_steps
+        self.var_name = var_name  # added
         self.ran = False
 
     def run(self, trainer, pl_module, **kwargs):
-        if self.ran:
-            return
-        else:
-            self.ran = True
-            
+        # commented out to allow for regrouping every epoch
+        # if self.ran:
+        #     return
+        # else:
+        #     self.ran = True
+
         batches, info_dict = pl_module.current_batch, pl_module.current_info
 
         conditions = []
         for s in range(len(info_dict)):
-            info_strings = info_dict[s]["instruction_outcome"]
+            info_strings = info_dict[s][self.var_name]  # changed
             categories, inverse_indices = np.unique(info_strings, return_inverse=True)
             unique_indices = [np.where(inverse_indices == i)[0] for i in range(len(categories))]
-            conditions.append( (categories, unique_indices) )
-        pl_module.conditions = conditions 
+            conditions.append((categories, unique_indices))
+        pl_module.conditions = conditions
         
 class get_default_conditions:
     def __init__(self, var_name="batch", run_steps=["valid"]):
@@ -837,11 +839,13 @@ class ComputeInitWeights:
                  normalize: bool = True,
                  filter_cond: bool = True,
                  run_steps: list = ["valid"],
+                 var_name: str = "trial_type",  # added
                 ):
         self.name = "compute_init_weights"
         self.normalize = normalize
         self.filter_cond = filter_cond
         self.run_steps = run_steps
+        self.var_name = var_name  # added
         self.ran = False
     
     def run(self, trainer, pl_module, **kwargs):
@@ -851,11 +855,13 @@ class ComputeInitWeights:
             self.ran = True
             
         dm = trainer.datamodule
-        all_session_datasets = (
-            dm.train_session_datasets + dm.val_session_datasets
-        )
-        idx_sessions = list(range(len(dm.train_session_datasets))) + \
-        list(range(len(dm.val_session_datasets)))
+        # all_session_datasets = (
+        #     dm.train_session_datasets + dm.val_session_datasets
+        # )
+        # idx_sessions = list(range(len(dm.train_session_datasets))) + \
+        # list(range(len(dm.val_session_datasets)))
+        all_session_datasets = dm.train_session_datasets # replaced to ensure clean validation, otherwise intiailization uses both training and validation
+        idx_sessions = list(range(len(dm.train_session_datasets)))
         
         area_arr_dict = {an: [] for an in pl_module.area_names}
         cond_arr = []
@@ -873,7 +879,7 @@ class ComputeInitWeights:
                     
                 # Get condition
                 info = session_ds.dataset.info_list[batch_idx]
-                cond = info["instruction_outcome"]
+                cond = info[self.var_name]  # changed from info["instruction_outcome"]
                 cond_arr.append(cond)
                 
                 # Get session

@@ -30,4 +30,4 @@ area_names:
 
 batch_size: 16 # changed from 16
 train_val_split_seed: 42
-ignore_info: true
+ignore_info: false

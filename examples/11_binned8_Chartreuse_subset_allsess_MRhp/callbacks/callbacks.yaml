@@ -1,8 +1,9 @@
 on_init_end_calls:
   _target_: mrlfads.callbacks.OnEpochEndCalls
   callbacks:
+    - _target_: mrlfads.callbacks.ComputeInitWeights # only an initialization choice, may result in better fitting, could also change to choice
+      var_name: trial_type
     - _target_: mrlfads.callbacks.get_maximum_activity_units
-    - _target_: mrlfads.callbacks.get_default_conditions
     - _target_: mrlfads.callbacks.Log
       tags:
         - "lr-AdamW"
@@ -15,4 +16,22 @@ on_init_end_calls:
       smooth: false
       n_samples: 4
     - _target_: mrlfads.callbacks.ProctorSummaryPlot
+      log_every_n_epochs: 50
+    - _target_: mrlfads.callbacks.PSTHPlot
+      log_every_n_epochs: 100
+    - _target_: mrlfads.callbacks.get_conditions
+      var_name: trial_type # default conditions for aggregated comm plots, get_conditions for separated L vs R
+      run_steps: [valid]
+    - _target_: mrlfads.callbacks.CommunicationPSTHPlot
+      var_name: trial_type
+      log_every_n_epochs: 50
+      run_steps: [valid]
+    - _target_: mrlfads.callbacks.get_conditions
+      var_name: choice
+      run_steps: [valid]
+    - _target_: mrlfads.callbacks.CommunicationPSTHPlot
+      var_name: choice
+      log_every_n_epochs: 50
+      run_steps: [valid]
+    - _target_: mrlfads.callbacks.AnatomyPlot
       log_every_n_epochs: 50
