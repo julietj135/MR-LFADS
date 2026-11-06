@@ -30,8 +30,8 @@ kl_com_scale: 0.1
 kl_ic_scale: ${model.kl_co_scale}
 
 # L2 regularization
-l2_start_epoch: 50 
-l2_increase_epoch: 50 
+l2_start_epoch: 100 # tuned
+l2_increase_epoch: 100 # tuned
 l2_scale: 1.0e+4
 
 # Other regularization
