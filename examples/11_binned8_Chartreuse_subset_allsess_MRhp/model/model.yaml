@@ -20,19 +20,19 @@ lr_adam_epsilon: 1.0e-8
 weight_decay: 0.0
 
 # ----- REGULARIZATION ----- #
-# KL divergence regularization # tuned
-kl_start_epoch_co: 100
-kl_increase_epoch_co: 100
-kl_start_epoch_com: 150
-kl_increase_epoch_com: 100
+# KL divergence regularization 
+kl_start_epoch_co: 100 # tuned 
+kl_increase_epoch_co: 100 # tuned 
+kl_start_epoch_com: 150 # fixed
+kl_increase_epoch_com: 100 # fixed
 kl_co_scale: 0.1 # default, area-specific ones are tuned
-kl_com_scale: 0.1
+kl_com_scale: 0.1 # tuning per area
 kl_ic_scale: ${model.kl_co_scale}
 
 # L2 regularization
 l2_start_epoch: 100 # tuned
 l2_increase_epoch: 100 # tuned
-l2_scale: 1.0e+4
+l2_scale: 1.0e+4 # tuned
 
 # Other regularization
 dropout_rate: 0.1 # tuned

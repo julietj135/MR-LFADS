@@ -29,12 +29,12 @@ CONFIG_PATH = CUR_DIR / "main.yaml"
 
 AREAS = ["MOp", "RSP", "SSp-tr", "VISp"]
 KL_COM_SCALES = [0.001, 0.01]
-KL_STARTS = [100, 150]
-KL_INC = [100, 200]
+# KL_STARTS = [100, 150]
+# KL_INC = [100, 200]
 
 HYPERPARAM_SPACE = {
-    "kl_start": tune.grid_search(KL_STARTS),
-    "kl_inc": tune.grid_search(KL_INC),
+    # "kl_start": tune.grid_search(KL_STARTS),
+    # "kl_inc": tune.grid_search(KL_INC),
     **{f"kl_com_{area}": tune.grid_search(KL_COM_SCALES) for area in AREAS},
     "seed": 0,
 }
@@ -77,8 +77,8 @@ def trainable(trial_config, config_path):
         cfg.model.num_other_areas = len(AREAS) - 1
         cfg.model.detach_hn = True
         
-        cfg.model.kl_start_epoch_com = int(trial_config["kl_start"])
-        cfg.model.kl_increase_epoch_com = int(trial_config["kl_inc"])
+        # cfg.model.kl_start_epoch_com = int(trial_config["kl_start"])
+        # cfg.model.kl_increase_epoch_com = int(trial_config["kl_inc"])
         
     # Hold out the first 10% of neurons in each session.
     heldout = {}
@@ -228,8 +228,8 @@ if __name__ == "__main__":
         best = min(candidates, key=lambda result: result.metrics["holdout_loss"])
 
         summary = {
-            "kl_start_epoch_com": int(best.config["kl_start"]),
-            "kl_increase_epoch_com": int(best.config["kl_inc"]),
+            # "kl_start_epoch_com": int(best.config["kl_start"]),
+            # "kl_increase_epoch_com": int(best.config["kl_inc"]),
             "kl_com_scale_by_area": {
                 area: float(best.config[f"kl_com_{area}"])
                 for area in AREAS
