@@ -35,10 +35,11 @@ def get_holdout(model, area_name):
         )
     return hn
 
-def get_pseudo_rsquared(model, sess=0):
+def get_pseudo_rsquared(model, sess=0, reduction=None):
     
     ic_enc_seq_len = model.hparams.ic_enc_seq_len
-    r2_holdin_dict = {}, r2_holdout_dict = {}
+    r2_holdin_dict = {}
+    r2_holdout_dict = {}
     
     for area_name in model.area_names:
         
